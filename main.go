@@ -3,9 +3,10 @@ package main
 import (
 	"context"
 	"flag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
-	"github.com/yohan460/terraform-provider-jamf/jamf"
 	"log"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
+	"github.com/w0de/terraform-provider-jamf/jamf"
 )
 
 func main() {

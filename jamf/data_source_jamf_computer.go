@@ -8,29 +8,34 @@ import (
 	"github.com/w0de/go-jamf-api"
 )
 
-func dataSourceJamfCategory() *schema.Resource {
+func dataSourceJamfComputer() *schema.Resource {
 	return &schema.Resource{
 		ReadContext: dataSourceJamfCategoryRead,
 		Schema: map[string]*schema.Schema{
+			// Computed values.
+			"id": {
+				Type:     schema.TypeInt,
+				Computed: true,
+			},
 			// Computed values.
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
 			// Computed values.
-			"priority": {
-				Type:     schema.TypeInt,
+			"serial_number": {
+				Type:     schema.TypeString,
 				Computed: true,
 			},
 		},
 	}
 }
 
-func dataSourceJamfCategoryRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func dataSourceJamfComputerRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 	c := m.(*jamf.Client)
 
-	resp, err := c.GetCategoryByName(d.Get("name").(string))
+	resp, err := c.GetComputerInventories(d.Get("name").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}

@@ -1,4 +1,4 @@
-module github.com/yohan460/terraform-provider-jamf
+module github.com/w0de/terraform-provider-jamf
 
 go 1.18
 
@@ -6,7 +6,7 @@ require (
 	github.com/hashicorp/go-cleanhttp v0.5.2
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.4.3
 	github.com/mitchellh/go-homedir v1.1.0
-	github.com/yohan460/go-jamf-api v0.0.0-20230411151701-d1c2c274032b
+	github.com/w0de/go-jamf-api v0.0.1
 )
 
 require (
