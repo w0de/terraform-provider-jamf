@@ -16,7 +16,7 @@ func main() {
 	flag.Parse()
 
 	if debugMode {
-		err := plugin.Debug(context.Background(), "registry.terraform.io/yohan460/jamf",
+		err := plugin.Debug(context.Background(), "registry.terraform.io/w0de/jamf",
 			&plugin.ServeOpts{
 				ProviderFunc: jamf.Provider,
 			})

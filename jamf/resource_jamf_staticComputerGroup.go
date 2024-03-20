@@ -52,7 +52,7 @@ func resourceJamfStaticComputerGroup() *schema.Resource {
 					Schema: map[string]*schema.Schema{
 						"id": {
 							Type:     schema.TypeInt,
-							Optional: true,
+							Computed: true,
 						},
 						"name": {
 							Type:     schema.TypeString,
@@ -60,7 +60,7 @@ func resourceJamfStaticComputerGroup() *schema.Resource {
 						},
 						"serial_number": {
 							Type:     schema.TypeString,
-							Computed: true,
+							Required: true,
 						},
 					},
 				},
