@@ -19,6 +19,17 @@ func resourceJamfStaticComputerGroup() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: importJamfStaticComputerGroupState,
 		},
+		// CustomizeDiff: customdiff.All(
+		// 	customdiff.ComputedIf("id", func(_ context.Context, diff *schema.ResourceDiff, _ interface{}) bool {
+		// 		// _, ok := diff.GetOkExists("serial_number")
+		// 		diff.SetNewComputed("computer.C07XH8MHJYVW.id")
+		// 		return false
+		// 	}),
+		// 	// customdiff.ComputedIf("serial_number", func(_ context.Context, diff *schema.ResourceDiff, _ interface{}) bool {
+		// 	// 	_, ok := diff.GetOkExists("id")
+		// 	// 	return ok
+		// 	// }),
+		// ),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:     schema.TypeString,
@@ -49,6 +60,7 @@ func resourceJamfStaticComputerGroup() *schema.Resource {
 				Type:     schema.TypeSet,
 				Optional: true,
 				Elem: &schema.Resource{
+					// CustomizeDiff: resourceJamfStaticComputerGroupCustomizeDiff,
 					Schema: map[string]*schema.Schema{
 						"id": {
 							Type:     schema.TypeInt,
@@ -209,4 +221,9 @@ func importJamfStaticComputerGroupState(ctx context.Context, d *schema.ResourceD
 	deconstructJamfComputerGroupStruct(d, resp)
 
 	return []*schema.ResourceData{d}, nil
+}
+
+func resourceJamfStaticComputerGroupCustomizeDiff(d *schema.ResourceDiff, m interface{}) error {
+	d.SetNewComputed("id")
+	return nil
 }

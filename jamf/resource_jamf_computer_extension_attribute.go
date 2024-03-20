@@ -230,11 +230,7 @@ func resourceJamfComputerExtensionAttributeRead(ctx context.Context, d *schema.R
 	resp, err := c.GetComputerExtensionAttribute(id)
 
 	if err != nil {
-		if jamfErr, ok := err.(jamf.Error); ok && jamfErr.StatusCode() == 404 {
-			d.SetId("")
-		} else {
-			return diag.FromErr(err)
-		}
+		return diag.FromErr(err)
 	} else {
 		deconstructJamfComputerExtensionAttributeStruct(d, resp)
 	}
