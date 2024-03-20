@@ -1,4 +1,4 @@
-module github.com/yohan460/terraform-provider-jamf
+module github.com/w0de/terraform-provider-jamf
 
 go 1.18
 
