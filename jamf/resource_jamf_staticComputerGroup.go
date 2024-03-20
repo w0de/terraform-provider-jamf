@@ -52,7 +52,7 @@ func resourceJamfStaticComputerGroup() *schema.Resource {
 					Schema: map[string]*schema.Schema{
 						"id": {
 							Type:     schema.TypeInt,
-							Optional: true,
+							Computed: true,
 						},
 						"name": {
 							Type:     schema.TypeString,
@@ -60,7 +60,7 @@ func resourceJamfStaticComputerGroup() *schema.Resource {
 						},
 						"serial_number": {
 							Type:     schema.TypeString,
-							Optional: true,
+							Required: true,
 						},
 					},
 				},
@@ -69,7 +69,7 @@ func resourceJamfStaticComputerGroup() *schema.Resource {
 	}
 }
 
-func buildJamfStaticComputerGroupStruct(d *schema.ResourceData) (*jamf.ComputerGroup, error) {
+func buildJamfStaticComputerGroupStruct(d *schema.ResourceData) *jamf.ComputerGroup {
 	var out jamf.ComputerGroup
 	id, _ := strconv.Atoi(d.Id())
 	out.ID = id
@@ -92,15 +92,11 @@ func buildJamfStaticComputerGroupStruct(d *schema.ResourceData) (*jamf.ComputerG
 		for _, c := range comps {
 			compData := c.(map[string]interface{})
 			comp := jamf.ComputerGroupComputerEntry{}
+			if val, ok := compData["id"].(int); ok {
+				comp.ID = val
+			}
 			if val, ok := compData["serial_number"].(string); ok {
 				comp.SerialNumber = val
-				if _, ok := compData["id"]; ok {
-					return nil, fmt.Errorf("must provide exactly one of \"serial_number\" or \"id\"")
-				}
-			} else if val, ok := compData["id"].(int); ok {
-				comp.ID = val
-			} else {
-				return nil, fmt.Errorf("must provide exactly one of \"serial_number\" or \"id\"")
 			}
 			if val, ok := compData["name"].(string); ok {
 				comp.Name = val
@@ -110,16 +106,13 @@ func buildJamfStaticComputerGroupStruct(d *schema.ResourceData) (*jamf.ComputerG
 		out.Computers = compList
 	}
 
-	return &out, nil
+	return &out
 }
 
 func resourceJamfStaticComputerGroupCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	c := m.(*jamf.Client)
-	b, err := buildJamfStaticComputerGroupStruct(d)
 
-	if err != nil {
-		return diag.FromErr(err)
-	}
+	b := buildJamfStaticComputerGroupStruct(d)
 
 	group := &jamf.ComputerGroupRequest{}
 	group.Name = b.Name
@@ -163,11 +156,8 @@ func resourceJamfStaticComputerGroupRead(ctx context.Context, d *schema.Resource
 
 func resourceJamfStaticComputerGroupUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	c := m.(*jamf.Client)
-	b, err := buildJamfStaticComputerGroupStruct(d)
 
-	if err != nil {
-		return diag.FromErr(err)
-	}
+	b := buildJamfStaticComputerGroupStruct(d)
 
 	if _, err := c.UpdateComputerGroup(b); err != nil {
 		return diag.FromErr(err)
@@ -179,11 +169,7 @@ func resourceJamfStaticComputerGroupUpdate(ctx context.Context, d *schema.Resour
 func resourceJamfStaticComputerGroupDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 	c := m.(*jamf.Client)
-	b, err := buildJamfStaticComputerGroupStruct(d)
-
-	if err != nil {
-		return diag.FromErr(err)
-	}
+	b := buildJamfStaticComputerGroupStruct(d)
 
 	if _, err := c.DeleteComputerGroup(b.ID); err != nil {
 		return diag.FromErr(err)

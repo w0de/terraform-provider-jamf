@@ -14,15 +14,15 @@ func TestAccJamfStaticComputerGroup_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccCheckJamfStaticComputerGroupConfigWithName,
-				ExpectError: regexp.MustCompile("Computed attributes cannot be set, but a value was set for \"computer.0.name\""),
+				ExpectError: regexp.MustCompile("The argument \"serial_number\" is required, but no definition was found."),
 			},
 			{
 				Config:      testAccCheckJamfStaticComputerGroupConfigMissingSerial,
-				ExpectError: regexp.MustCompile("must provide exactly one of \"serial_number\" or \"id\""),
+				ExpectError: regexp.MustCompile("The argument \"serial_number\" is required, but no definition was found."),
 			},
 			{
 				Config:      testAccCheckJamfStaticComputerGroupConfigWithSerialAndId,
-				ExpectError: regexp.MustCompile("must provide exactly one of \"serial_number\" or \"id\""),
+				ExpectError: regexp.MustCompile("Computed attributes cannot be set, but a value was set for \"computer.0.id\""),
 			},
 		},
 	})
