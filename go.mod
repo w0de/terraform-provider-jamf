@@ -6,7 +6,7 @@ require (
 	github.com/hashicorp/go-cleanhttp v0.5.2
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.4.3
 	github.com/mitchellh/go-homedir v1.1.0
-	github.com/w0de/go-jamf-api v0.0.1
+	github.com/yohan460/go-jamf-api v0.0.0-20231020015325-f3a01d49ab57
 )
 
 require (
@@ -23,6 +23,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/google/go-cmp v0.5.4 // indirect
+	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/googleapis/gax-go/v2 v2.0.5 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-checkpoint v0.5.0 // indirect

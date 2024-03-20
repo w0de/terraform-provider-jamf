@@ -6,7 +6,7 @@ import (
 	"github.com/hashicorp/go-cleanhttp"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/w0de/go-jamf-api"
+	"github.com/yohan460/go-jamf-api"
 )
 
 type ProviderConfiguration struct {
@@ -67,7 +67,7 @@ func Provider() *schema.Provider {
 
 func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	var diags diag.Diagnostics
-	c, err := jamf.NewClient(d.Get("username").(string), d.Get("password").(string), d.Get("url").(string))
+	c, err := jamf.NewClient(d.Get("url").(string), jamf.WithBasicAuth(d.Get("username").(string), d.Get("password").(string)))
 	if err != nil {
 		diag.FromErr(err)
 	}
