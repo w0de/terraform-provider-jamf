@@ -27,6 +27,16 @@ func Provider() *schema.Provider {
 				Optional:    true,
 				DefaultFunc: schema.MultiEnvDefaultFunc([]string{"JAMF_PASSWORD"}, nil),
 			},
+			"client_id": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				DefaultFunc: schema.MultiEnvDefaultFunc([]string{"JAMF_CLIENT_ID"}, nil),
+			},
+			"client_secret": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				DefaultFunc: schema.MultiEnvDefaultFunc([]string{"JAMF_CLIENT_SECRET"}, nil),
+			},
 			"url": {
 				Type:        schema.TypeString,
 				Optional:    true,
@@ -67,10 +77,19 @@ func Provider() *schema.Provider {
 
 func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	var diags diag.Diagnostics
-	c, err := jamf.NewClient(d.Get("url").(string), jamf.WithBasicAuth(d.Get("username").(string), d.Get("password").(string)))
-	if err != nil {
-		diag.FromErr(err)
+	var c *jamf.Client
+	var e error
+
+	if _, OAuth := d.GetOk("client_id"); OAuth {
+		c, err := jamf.NewClient(d.Get("url").(string), jamf.WithOAuth(d.Get("client_id").(string), d.Get("client_secret").(string)))
+	} else {
+		c, err := jamf.NewClient(d.Get("url").(string), jamf.WithBasicAuth(d.Get("username").(string), d.Get("password").(string)))
 	}
+
+	if e != nil {
+		diag.FromErr(e)
+	}
+
 	c.ExtraHeader["User-Agent"] = AppName
 	c.HttpClient = cleanhttp.DefaultClient()
 	return c, diags

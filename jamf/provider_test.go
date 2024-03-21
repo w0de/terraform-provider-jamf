@@ -18,11 +18,16 @@ var providerFactories = map[string]func() (*schema.Provider, error){
 // such as environment variables containing test keys that are used to
 // configure the Provider or Resource under test.
 func testAccPreCheck(t *testing.T) {
-	if !isUsernameSet() {
-		t.Fatal("JAMF_USERNAME environment variable must be set for acceptance tests")
-	}
-	if !isPasswordSet() {
-		t.Fatal("JAMF_PASSWORD environment variable must be set for acceptance tests")
+	if isClientIdSet() {
+		if !isClientSecretSet() {
+			t.Fatal("JAMF_CLIENT_SECRET environment variable must be set for acceptance tests")
+		}
+	} else if isUsernameSet() {
+		if !isPasswordSet() {
+			t.Fatal("JAMF_PASSWORD environment variable must be set for acceptance tests")
+		}
+	} else {
+		t.Fatal("JAMF_USERNAME or JAMF_CLIENT_ID environment variable must be set for acceptance tests")
 	}
 	if !isURLSet() {
 		t.Fatal("JAMF_URL environment variable must be set for acceptance tests")
@@ -45,6 +50,20 @@ func isPasswordSet() bool {
 
 func isURLSet() bool {
 	if os.Getenv("JAMF_URL") != "" {
+		return true
+	}
+	return false
+}
+
+func isClientIdSet() bool {
+	if os.Getenv("JAMF_CLIENT_ID") != "" {
+		return true
+	}
+	return false
+}
+
+func isClientSecretSet() bool {
+	if os.Getenv("JAMF_CLIENT_SECRET") != "" {
 		return true
 	}
 	return false
