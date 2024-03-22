@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"time"
 
+	"github.com/avast/retry-go"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/yohan460/go-jamf-api"
@@ -181,19 +183,46 @@ func resourceJamfSmartComputerGroupCreate(ctx context.Context, d *schema.Resourc
 
 func resourceJamfSmartComputerGroupRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
+	var resp *jamf.ComputerGroup
 	c := m.(*jamf.Client)
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	resp, err := c.GetComputerGroup(id)
+
+	err = retry.Do(
+		// The actual function that does "stuff"
+		func() error {
+			resp, err = c.GetComputerGroup(id)
+			if err != nil {
+				return err
+			}
+
+			return nil
+		},
+		// A function to decide whether you actually want to
+		// retry or not. In this case, it would make sense
+		// to actually stop retrying, since the host does not exist.
+		// Return true if you want to retry, false if not.
+		retry.RetryIf(
+			func(e error) bool {
+				if jamfErr, ok := e.(jamf.Error); ok && jamfErr.StatusCode() == 404 {
+					return true
+				} else {
+					return false
+				}
+			},
+		),
+		retry.Attempts(3),
+		// Basically, we are setting up a delay
+		// which randoms between 2 and 4 seconds.
+		retry.Delay(3*time.Second),
+		retry.MaxJitter(1*time.Second),
+	)
+
 	if err != nil {
-		if jamfErr, ok := err.(jamf.Error); ok && jamfErr.StatusCode() == 404 {
-			d.SetId("")
-		} else {
-			return diag.FromErr(err)
-		}
+		return diag.FromErr(err)
 	} else {
 		deconstructJamfComputerGroupStruct(d, resp)
 	}
