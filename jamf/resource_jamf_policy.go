@@ -336,6 +336,83 @@ func resourceJamfPolicy() *schema.Resource {
 								},
 							},
 						},
+						"exclusion": {
+							Type:     schema.TypeSet,
+							Optional: true,
+							MaxItems: 1,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"computer": {
+										Type:     schema.TypeSet,
+										Optional: true,
+										Elem: &schema.Resource{
+											Schema: map[string]*schema.Schema{
+												"id": {
+													Type:     schema.TypeInt,
+													Required: true,
+												},
+												"name": {
+													Type:     schema.TypeString,
+													Computed: true,
+												},
+												"udid": {
+													Type:     schema.TypeString,
+													Computed: true,
+												},
+											},
+										},
+									},
+									"computer_group": {
+										Type:     schema.TypeSet,
+										Optional: true,
+										Elem: &schema.Resource{
+											Schema: map[string]*schema.Schema{
+												"id": {
+													Type:     schema.TypeInt,
+													Required: true,
+												},
+												"name": {
+													Type:     schema.TypeString,
+													Computed: true,
+												},
+											},
+										},
+									},
+									"building": {
+										Type:     schema.TypeSet,
+										Optional: true,
+										Elem: &schema.Resource{
+											Schema: map[string]*schema.Schema{
+												"id": {
+													Type:     schema.TypeInt,
+													Required: true,
+												},
+												"name": {
+													Type:     schema.TypeString,
+													Computed: true,
+												},
+											},
+										},
+									},
+									"department": {
+										Type:     schema.TypeSet,
+										Optional: true,
+										Elem: &schema.Resource{
+											Schema: map[string]*schema.Schema{
+												"id": {
+													Type:     schema.TypeInt,
+													Required: true,
+												},
+												"name": {
+													Type:     schema.TypeString,
+													Computed: true,
+												},
+											},
+										},
+									},
+								},
+							},
+						},
 					},
 				},
 			},
@@ -681,6 +758,83 @@ func resourceJamfPolicy() *schema.Resource {
 	}
 }
 
+func extractPolicyScopeData(d *schema.ResourceData) *map[string]interface{} {
+
+}
+
+func buildJamfPolicyScopeStruct(d *schema.ResourceData) *jamf.PolicyScope {
+	var out jamf.PolicyScope
+
+	if s, ok := d.GetOk("scope"); ok {
+		v := s.(*schema.Set).List()
+		scope := v[0].(map[string]interface{})
+
+		if val, ok := scope["all_computers"]; ok {
+			out.AllComputers = val.(bool)
+		}
+
+		// Scope - Computers
+		if v, ok := scope["computer"]; ok {
+			computers := v.(*schema.Set).List()
+			computerList := []jamf.ComputerScope{}
+			for _, c := range computers {
+				computerData := c.(map[string]interface{})
+				computer := jamf.ComputerScope{}
+				if val, ok := computerData["id"].(int); ok {
+					computer.ID = val
+				}
+				computerList = append(computerList, computer)
+			}
+			out.Scope.Computers = computerList
+		}
+
+		// Scope - Computer Groups
+		if v, ok := scope["computer_group"]; ok {
+			computerGroups := v.(*schema.Set).List()
+			computerGroupList := []jamf.ComputerGroupListResponse{}
+			for _, c := range computerGroups {
+				computerGroupData := c.(map[string]interface{})
+				computerGroup := jamf.ComputerGroupListResponse{}
+				if val, ok := computerGroupData["id"].(int); ok {
+					computerGroup.ID = val
+				}
+				computerGroupList = append(computerGroupList, computerGroup)
+			}
+			out.Scope.ComputerGroups = computerGroupList
+		}
+
+		// Scope - Buildings
+		if v, ok := scope["building"]; ok {
+			buildings := v.(*schema.Set).List()
+			buildingList := []jamf.BuildingScope{}
+			for _, c := range buildings {
+				buildingData := c.(map[string]interface{})
+				building := jamf.BuildingScope{}
+				if val, ok := buildingData["id"].(int); ok {
+					building.ID = val
+				}
+				buildingList = append(buildingList, building)
+			}
+			out.Scope.Buildings = buildingList
+		}
+
+		// Scope - Departments
+		if v, ok := scope["department"]; ok {
+			departments := v.(*schema.Set).List()
+			departmentList := []jamf.DepartmentScope{}
+			for _, c := range departments {
+				departmentData := c.(map[string]interface{})
+				department := jamf.DepartmentScope{}
+				if val, ok := departmentData["id"].(int); ok {
+					department.ID = val
+				}
+				departmentList = append(departmentList, department)
+			}
+			out.Scope.Departments = departmentList
+		}
+	}
+}
+
 func buildJamfPolicyStruct(d *schema.ResourceData) *jamf.Policy {
 	var out jamf.Policy
 
@@ -836,74 +990,6 @@ func buildJamfPolicyStruct(d *schema.ResourceData) *jamf.Policy {
 	}
 
 	// Scope
-	if s, ok := d.GetOk("scope"); ok {
-		v := s.(*schema.Set).List()
-		scope := v[0].(map[string]interface{})
-
-		if val, ok := scope["all_computers"]; ok {
-			out.Scope.AllComputers = val.(bool)
-		}
-
-		// Scope - Computers
-		if v, ok := scope["computer"]; ok {
-			computers := v.(*schema.Set).List()
-			computerList := []jamf.ComputerScope{}
-			for _, c := range computers {
-				computerData := c.(map[string]interface{})
-				computer := jamf.ComputerScope{}
-				if val, ok := computerData["id"].(int); ok {
-					computer.ID = val
-				}
-				computerList = append(computerList, computer)
-			}
-			out.Scope.Computers = computerList
-		}
-
-		// Scope - Computer Groups
-		if v, ok := scope["computer_group"]; ok {
-			computerGroups := v.(*schema.Set).List()
-			computerGroupList := []jamf.ComputerGroupListResponse{}
-			for _, c := range computerGroups {
-				computerGroupData := c.(map[string]interface{})
-				computerGroup := jamf.ComputerGroupListResponse{}
-				if val, ok := computerGroupData["id"].(int); ok {
-					computerGroup.ID = val
-				}
-				computerGroupList = append(computerGroupList, computerGroup)
-			}
-			out.Scope.ComputerGroups = computerGroupList
-		}
-
-		// Scope - Buildings
-		if v, ok := scope["building"]; ok {
-			buildings := v.(*schema.Set).List()
-			buildingList := []jamf.BuildingScope{}
-			for _, c := range buildings {
-				buildingData := c.(map[string]interface{})
-				building := jamf.BuildingScope{}
-				if val, ok := buildingData["id"].(int); ok {
-					building.ID = val
-				}
-				buildingList = append(buildingList, building)
-			}
-			out.Scope.Buildings = buildingList
-		}
-
-		// Scope - Departments
-		if v, ok := scope["department"]; ok {
-			departments := v.(*schema.Set).List()
-			departmentList := []jamf.DepartmentScope{}
-			for _, c := range departments {
-				departmentData := c.(map[string]interface{})
-				department := jamf.DepartmentScope{}
-				if val, ok := departmentData["id"].(int); ok {
-					department.ID = val
-				}
-				departmentList = append(departmentList, department)
-			}
-			out.Scope.Departments = departmentList
-		}
-	}
 
 	// Self Service
 	if s, ok := d.GetOk("self_service"); ok {
@@ -1179,7 +1265,6 @@ func resourceJamfPolicyRead(ctx context.Context, d *schema.ResourceData, m inter
 	}
 
 	err = retry.Do(
-		// The actual function that does "stuff"
 		func() error {
 			resp, err = c.GetPolicy(id)
 			if err != nil {
@@ -1188,10 +1273,6 @@ func resourceJamfPolicyRead(ctx context.Context, d *schema.ResourceData, m inter
 
 			return nil
 		},
-		// A function to decide whether you actually want to
-		// retry or not. In this case, it would make sense
-		// to actually stop retrying, since the host does not exist.
-		// Return true if you want to retry, false if not.
 		retry.RetryIf(
 			func(e error) bool {
 				if jamfErr, ok := e.(jamf.Error); ok && jamfErr.StatusCode() == 404 {
@@ -1202,8 +1283,6 @@ func resourceJamfPolicyRead(ctx context.Context, d *schema.ResourceData, m inter
 			},
 		),
 		retry.Attempts(3),
-		// Basically, we are setting up a delay
-		// which randoms between 2 and 4 seconds.
 		retry.Delay(3*time.Second),
 		retry.MaxJitter(1*time.Second),
 	)

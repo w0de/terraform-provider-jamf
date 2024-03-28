@@ -142,13 +142,13 @@ func deconstructJamfComputerGroupStruct(d *schema.ResourceData, in *jamf.Compute
 	}
 	d.Set("criteria", criterias)
 
-	// comps := make([]interface{}, len(in.Computers), len(in.Computers))
-	// for i, v := range in.Computers {
-	// 	comps[i] = map[string]interface{}{
-	// 		"id":            v.ID,
-	// 		"name":          v.Name,
-	// 		"serial_number": v.SerialNumber,
-	// 	}
-	// }
-	// d.Set("computer", comps)
+	comps := make([]interface{}, len(in.Computers), len(in.Computers))
+	for i, v := range in.Computers {
+		comps[i] = map[string]interface{}{
+			"id":            v.ID,
+			"name":          v.Name,
+			"serial_number": v.SerialNumber,
+		}
+	}
+	d.Set("computer", comps)
 }

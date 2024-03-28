@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"time"
 
+	"github.com/avast/retry-go"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -219,17 +221,39 @@ func resourceJamfComputerExtensionAttributeCreate(ctx context.Context, d *schema
 
 func resourceJamfComputerExtensionAttributeRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
+	var resp *jamf.ComputerExtensionAttribute
 	c := m.(*jamf.Client)
 
-	id, _ := strconv.Atoi(d.Id())
-	resp, err := c.GetComputerExtensionAttribute(id)
+	id, err := strconv.Atoi(d.Id())
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	err = retry.Do(
+		func() error {
+			resp, err = c.GetComputerExtensionAttribute(id)
+			if err != nil {
+				return err
+			}
+
+			return nil
+		},
+		retry.RetryIf(
+			func(e error) bool {
+				if jamfErr, ok := e.(jamf.Error); ok && jamfErr.StatusCode() == 404 {
+					return true
+				} else {
+					return false
+				}
+			},
+		),
+		retry.Attempts(3),
+		retry.Delay(3*time.Second),
+		retry.MaxJitter(1*time.Second),
+	)
 
 	if err != nil {
-		if jamfErr, ok := err.(jamf.Error); ok && jamfErr.StatusCode() == 404 {
-			d.SetId("")
-		} else {
-			return diag.FromErr(err)
-		}
+		return diag.FromErr(err)
 	} else {
 		deconstructJamfComputerExtensionAttributeStruct(d, resp)
 	}

@@ -192,7 +192,6 @@ func resourceJamfSmartComputerGroupRead(ctx context.Context, d *schema.ResourceD
 	}
 
 	err = retry.Do(
-		// The actual function that does "stuff"
 		func() error {
 			resp, err = c.GetComputerGroup(id)
 			if err != nil {
@@ -201,10 +200,6 @@ func resourceJamfSmartComputerGroupRead(ctx context.Context, d *schema.ResourceD
 
 			return nil
 		},
-		// A function to decide whether you actually want to
-		// retry or not. In this case, it would make sense
-		// to actually stop retrying, since the host does not exist.
-		// Return true if you want to retry, false if not.
 		retry.RetryIf(
 			func(e error) bool {
 				if jamfErr, ok := e.(jamf.Error); ok && jamfErr.StatusCode() == 404 {
@@ -215,8 +210,6 @@ func resourceJamfSmartComputerGroupRead(ctx context.Context, d *schema.ResourceD
 			},
 		),
 		retry.Attempts(3),
-		// Basically, we are setting up a delay
-		// which randoms between 2 and 4 seconds.
 		retry.Delay(3*time.Second),
 		retry.MaxJitter(1*time.Second),
 	)
