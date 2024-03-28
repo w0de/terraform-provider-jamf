@@ -302,6 +302,83 @@ func dataSourceJamfPolicy() *schema.Resource {
 								},
 							},
 						},
+						"exclusion": {
+							Type:     schema.TypeSet,
+							Optional: true,
+							MaxItems: 1,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"computer": {
+										Type:     schema.TypeSet,
+										Optional: true,
+										Elem: &schema.Resource{
+											Schema: map[string]*schema.Schema{
+												"id": {
+													Type:     schema.TypeInt,
+													Required: true,
+												},
+												"name": {
+													Type:     schema.TypeString,
+													Computed: true,
+												},
+												"udid": {
+													Type:     schema.TypeString,
+													Computed: true,
+												},
+											},
+										},
+									},
+									"computer_group": {
+										Type:     schema.TypeSet,
+										Optional: true,
+										Elem: &schema.Resource{
+											Schema: map[string]*schema.Schema{
+												"id": {
+													Type:     schema.TypeInt,
+													Required: true,
+												},
+												"name": {
+													Type:     schema.TypeString,
+													Computed: true,
+												},
+											},
+										},
+									},
+									"building": {
+										Type:     schema.TypeSet,
+										Optional: true,
+										Elem: &schema.Resource{
+											Schema: map[string]*schema.Schema{
+												"id": {
+													Type:     schema.TypeInt,
+													Required: true,
+												},
+												"name": {
+													Type:     schema.TypeString,
+													Computed: true,
+												},
+											},
+										},
+									},
+									"department": {
+										Type:     schema.TypeSet,
+										Optional: true,
+										Elem: &schema.Resource{
+											Schema: map[string]*schema.Schema{
+												"id": {
+													Type:     schema.TypeInt,
+													Required: true,
+												},
+												"name": {
+													Type:     schema.TypeString,
+													Computed: true,
+												},
+											},
+										},
+									},
+								},
+							},
+						},
 					},
 				},
 			},
@@ -643,6 +720,68 @@ func dataSourceJamfPolicyRead(ctx context.Context, d *schema.ResourceData, m int
 	return diags
 }
 
+func deconstructJamfPolicyScopeStruct(in *jamf.PolicyScope) []interface{} {
+	scope := map[string]interface{}{
+		"all_computers": in.AllComputers,
+	}
+
+	// Scope - Computers
+	computers := []interface{}{}
+	for _, v := range in.Computers {
+		computers = append(computers, map[string]interface{}{
+			"id":   v.ID,
+			"name": v.Name,
+			"udid": v.UDID,
+		})
+	}
+	scope["computer"] = computers
+
+	// Scope - Computer Groups
+	computerGroups := []interface{}{}
+	for _, v := range in.ComputerGroups {
+		computerGroups = append(computerGroups, map[string]interface{}{
+			"id":   v.ID,
+			"name": v.Name,
+		})
+	}
+	scope["computer_group"] = computerGroups
+
+	// Scope - Buildings
+	buildings := []interface{}{}
+	for _, v := range in.Buildings {
+		buildings = append(buildings, map[string]interface{}{
+			"id":   v.ID,
+			"name": v.Name,
+		})
+	}
+	scope["building"] = buildings
+
+	// Scope - Departments
+	departments := []interface{}{}
+	for _, v := range in.Departments {
+		departments = append(departments, map[string]interface{}{
+			"id":   v.ID,
+			"name": v.Name,
+		})
+	}
+	scope["department"] = departments
+
+	// Scope - Exclusions
+	exclusions := len(in.Exclusions.Computers) + len(in.Exclusions.ComputerGroups) + len(in.Exclusions.Buildings) + len(in.Exclusions.Departments)
+	if exclusions > 0 {
+		exclusionScope := jamf.PolicyScope{}
+		exclusionScope.Computers = in.Exclusions.Computers
+		exclusionScope.ComputerGroups = in.Exclusions.ComputerGroups
+		exclusionScope.Buildings = in.Exclusions.Buildings
+		exclusionScope.Departments = in.Exclusions.Departments
+		scope["exclusion"] = deconstructJamfPolicyScopeStruct(&exclusionScope)
+	} else {
+		scope["exclusion"] = []interface{}{}
+	}
+
+	return []interface{}{scope}
+}
+
 func deconstructJamfPolicyStruct(d *schema.ResourceData, in *jamf.Policy) {
 
 	// General
@@ -720,51 +859,7 @@ func deconstructJamfPolicyStruct(d *schema.ResourceData, in *jamf.Policy) {
 	d.Set("general", []interface{}{general})
 
 	// Scope
-	scope := map[string]interface{}{
-		"all_computers": in.Scope.AllComputers,
-	}
-
-	// Scope - Computers
-	computers := []interface{}{}
-	for _, v := range in.Scope.Computers {
-		computers = append(computers, map[string]interface{}{
-			"id":   v.ID,
-			"name": v.Name,
-			"udid": v.UDID,
-		})
-	}
-	scope["computer"] = computers
-
-	// Scope - Computer Groups
-	computerGroups := []interface{}{}
-	for _, v := range in.Scope.ComputerGroups {
-		computerGroups = append(computerGroups, map[string]interface{}{
-			"id":   v.ID,
-			"name": v.Name,
-		})
-	}
-	scope["computer_group"] = computerGroups
-
-	// Scope - Buildings
-	buildings := []interface{}{}
-	for _, v := range in.Scope.Buildings {
-		buildings = append(buildings, map[string]interface{}{
-			"id":   v.ID,
-			"name": v.Name,
-		})
-	}
-	scope["building"] = buildings
-
-	// Scope - Departments
-	departments := []interface{}{}
-	for _, v := range in.Scope.Departments {
-		departments = append(departments, map[string]interface{}{
-			"id":   v.ID,
-			"name": v.Name,
-		})
-	}
-	scope["department"] = departments
-	d.Set("scope", []interface{}{scope})
+	d.Set("scope", deconstructJamfPolicyScopeStruct(&in.Scope))
 
 	// Self Service
 	selfService := map[string]interface{}{

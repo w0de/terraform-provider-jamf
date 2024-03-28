@@ -758,81 +758,85 @@ func resourceJamfPolicy() *schema.Resource {
 	}
 }
 
-func extractPolicyScopeData(d *schema.ResourceData) *map[string]interface{} {
-
-}
-
-func buildJamfPolicyScopeStruct(d *schema.ResourceData) *jamf.PolicyScope {
+func buildJamfPolicyScopeStruct(scope map[string]interface{}) jamf.PolicyScope {
 	var out jamf.PolicyScope
 
-	if s, ok := d.GetOk("scope"); ok {
-		v := s.(*schema.Set).List()
-		scope := v[0].(map[string]interface{})
-
-		if val, ok := scope["all_computers"]; ok {
-			out.AllComputers = val.(bool)
-		}
-
-		// Scope - Computers
-		if v, ok := scope["computer"]; ok {
-			computers := v.(*schema.Set).List()
-			computerList := []jamf.ComputerScope{}
-			for _, c := range computers {
-				computerData := c.(map[string]interface{})
-				computer := jamf.ComputerScope{}
-				if val, ok := computerData["id"].(int); ok {
-					computer.ID = val
-				}
-				computerList = append(computerList, computer)
-			}
-			out.Scope.Computers = computerList
-		}
-
-		// Scope - Computer Groups
-		if v, ok := scope["computer_group"]; ok {
-			computerGroups := v.(*schema.Set).List()
-			computerGroupList := []jamf.ComputerGroupListResponse{}
-			for _, c := range computerGroups {
-				computerGroupData := c.(map[string]interface{})
-				computerGroup := jamf.ComputerGroupListResponse{}
-				if val, ok := computerGroupData["id"].(int); ok {
-					computerGroup.ID = val
-				}
-				computerGroupList = append(computerGroupList, computerGroup)
-			}
-			out.Scope.ComputerGroups = computerGroupList
-		}
-
-		// Scope - Buildings
-		if v, ok := scope["building"]; ok {
-			buildings := v.(*schema.Set).List()
-			buildingList := []jamf.BuildingScope{}
-			for _, c := range buildings {
-				buildingData := c.(map[string]interface{})
-				building := jamf.BuildingScope{}
-				if val, ok := buildingData["id"].(int); ok {
-					building.ID = val
-				}
-				buildingList = append(buildingList, building)
-			}
-			out.Scope.Buildings = buildingList
-		}
-
-		// Scope - Departments
-		if v, ok := scope["department"]; ok {
-			departments := v.(*schema.Set).List()
-			departmentList := []jamf.DepartmentScope{}
-			for _, c := range departments {
-				departmentData := c.(map[string]interface{})
-				department := jamf.DepartmentScope{}
-				if val, ok := departmentData["id"].(int); ok {
-					department.ID = val
-				}
-				departmentList = append(departmentList, department)
-			}
-			out.Scope.Departments = departmentList
-		}
+	if v, ok := scope["all_computers"]; ok {
+		out.AllComputers = v.(bool)
 	}
+
+	// Scope - Computers
+	if v, ok := scope["computer"]; ok {
+		computers := v.(*schema.Set).List()
+		computerList := []jamf.ComputerScope{}
+		for _, c := range computers {
+			computerData := c.(map[string]interface{})
+			computer := jamf.ComputerScope{}
+			if val, ok := computerData["id"].(int); ok {
+				computer.ID = val
+			}
+			computerList = append(computerList, computer)
+		}
+		out.Computers = computerList
+	}
+
+	// Scope - Computer Groups
+	if v, ok := scope["computer_group"]; ok {
+		computerGroups := v.(*schema.Set).List()
+		computerGroupList := []jamf.ComputerGroupListResponse{}
+		for _, c := range computerGroups {
+			computerGroupData := c.(map[string]interface{})
+			computerGroup := jamf.ComputerGroupListResponse{}
+			if val, ok := computerGroupData["id"].(int); ok {
+				computerGroup.ID = val
+			}
+			computerGroupList = append(computerGroupList, computerGroup)
+		}
+		out.ComputerGroups = computerGroupList
+	}
+
+	// Scope - Buildings
+	if v, ok := scope["building"]; ok {
+		buildings := v.(*schema.Set).List()
+		buildingList := []jamf.BuildingScope{}
+		for _, c := range buildings {
+			buildingData := c.(map[string]interface{})
+			building := jamf.BuildingScope{}
+			if val, ok := buildingData["id"].(int); ok {
+				building.ID = val
+			}
+			buildingList = append(buildingList, building)
+		}
+		out.Buildings = buildingList
+	}
+
+	// Scope - Departments
+	if v, ok := scope["department"]; ok {
+		departments := v.(*schema.Set).List()
+		departmentList := []jamf.DepartmentScope{}
+		for _, c := range departments {
+			departmentData := c.(map[string]interface{})
+			department := jamf.DepartmentScope{}
+			if val, ok := departmentData["id"].(int); ok {
+				department.ID = val
+			}
+			departmentList = append(departmentList, department)
+		}
+		out.Departments = departmentList
+	}
+
+	// Scope - Departments
+	if val, ok := scope["exclusion"]; ok {
+		v := val.(*schema.Set).List()
+		exclusions := v[0].(map[string]interface{})
+		exclusionsPolicyScope := buildJamfPolicyScopeStruct(exclusions)
+		out.Exclusions.Computers = exclusionsPolicyScope.Computers
+		out.Exclusions.ComputerGroups = exclusionsPolicyScope.ComputerGroups
+		out.Exclusions.Buildings = exclusionsPolicyScope.Buildings
+		out.Exclusions.Departments = exclusionsPolicyScope.Departments
+	}
+
+	return out
 }
 
 func buildJamfPolicyStruct(d *schema.ResourceData) *jamf.Policy {
@@ -990,6 +994,11 @@ func buildJamfPolicyStruct(d *schema.ResourceData) *jamf.Policy {
 	}
 
 	// Scope
+	if s, ok := d.GetOk("scope"); ok {
+		v := s.(*schema.Set).List()
+		scope := v[0].(map[string]interface{})
+		out.Scope = buildJamfPolicyScopeStruct(scope)
+	}
 
 	// Self Service
 	if s, ok := d.GetOk("self_service"); ok {
